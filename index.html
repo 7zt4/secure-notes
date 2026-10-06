@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; base-uri 'none'">
+  <title>Secure Notes</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='14' width='20' height='14' rx='3' fill='%230E5A5F'/%3E%3Cpath d='M10 14v-4a6 6 0 0 1 12 0v4' fill='none' stroke='%230E5A5F' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Lock / setup screen -->
+  <main id="lockScreen" class="lock" aria-labelledby="lockTitle">
+    <div class="lock-inner">
+      <svg class="padlock" viewBox="0 0 64 64" aria-hidden="true">
+        <path class="shackle" d="M20 28v-8a12 12 0 0 1 24 0v8" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+        <rect x="12" y="28" width="40" height="30" rx="6" fill="currentColor"/>
+        <circle cx="32" cy="41" r="4" fill="var(--bg)"/>
+        <rect x="30" y="43" width="4" height="8" rx="2" fill="var(--bg)"/>
+      </svg>
+
+      <h1 id="lockTitle">Your notes are locked</h1>
+      <p id="lockLead" class="lead">Enter your master password to decrypt your notes.</p>
+
+      <form id="lockForm" novalidate>
+        <label for="pw">Master password</label>
+        <div class="field">
+          <input id="pw" type="password" autocomplete="current-password" spellcheck="false">
+          <button type="button" id="togglePw" class="ghost" aria-pressed="false">Show</button>
+        </div>
+
+        <div id="confirmWrap" hidden>
+          <label for="pw2">Confirm password</label>
+          <input id="pw2" type="password" autocomplete="new-password" spellcheck="false">
+          <div id="meter" class="meter" data-level="0" aria-hidden="true"><span></span></div>
+          <p id="meterText" class="hint" aria-live="polite"></p>
+        </div>
+
+        <p id="lockMsg" class="msg" role="status" aria-live="polite"></p>
+        <button id="lockSubmit" class="primary wide" type="submit">Unlock</button>
+      </form>
+
+      <div class="lock-links">
+        <button type="button" id="restoreBtn" class="link">Restore from backup</button>
+        <button type="button" id="eraseBtn" class="link danger" hidden>Erase vault</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+
+      <p class="fine">Notes are encrypted in this browser with AES-256-GCM. The password is never stored or sent anywhere. If you forget it, your notes cannot be recovered.</p>
+    </div>
+  </main>
+
+  <!-- Notes app -->
+  <div id="appScreen" class="app" hidden>
+    <header class="topbar">
+      <h1 class="brand">Secure Notes</h1>
+      <p class="idle-hint">Locks automatically after 2 minutes of inactivity</p>
+      <div class="actions">
+        <button id="exportBtn" class="ghost" type="button">Export backup</button>
+        <button id="changePwBtn" class="ghost" type="button">Change password</button>
+        <button id="lockBtn" class="primary" type="button">Lock now</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar" aria-label="Your notes">
+        <div class="side-tools">
+          <input id="search" type="search" placeholder="Search notes" aria-label="Search notes" autocomplete="off">
+          <button id="newBtn" class="primary" type="button">New note</button>
+        </div>
+        <ul id="noteList" class="note-list"></ul>
+      </aside>
+
+      <section class="editor" aria-label="Note editor">
+        <div id="emptyState" class="empty">
+          <p class="empty-title">No note open</p>
+          <p class="hint">Create a note or pick one from the list. Everything you type is encrypted before it is saved.</p>
+        </div>
+        <div id="editorPane" hidden>
+          <input id="title" class="note-title" type="text" placeholder="Title" aria-label="Note title" maxlength="200" autocomplete="off">
+          <textarea id="body" class="note-body" placeholder="Start writing…" aria-label="Note text" spellcheck="true"></textarea>
+          <footer class="editor-foot">
+            <span id="saveStatus" role="status" aria-live="polite"></span>
+            <button id="deleteBtn" class="danger-ghost" type="button">Delete note</button>
+          </footer>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Confirm dialog -->
+  <dialog id="confirmDialog" aria-labelledby="confirmTitle">
+    <form method="dialog">
+      <h2 id="confirmTitle"></h2>
+      <p id="confirmMsg"></p>
+      <div class="dlg-actions">
+        <button value="cancel" class="ghost">Cancel</button>
+        <button value="ok" id="confirmOk" class="primary">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Change password dialog -->
+  <dialog id="pwDialog" aria-labelledby="pwDialogTitle">
+    <form id="pwForm" novalidate>
+      <h2 id="pwDialogTitle">Change master password</h2>
+      <p class="hint">Your notes are re-encrypted with the new password. Older backups still need the password they were made with.</p>
+      <label for="curPw">Current password</label>
+      <input id="curPw" type="password" autocomplete="current-password">
+      <label for="newPw">New password</label>
+      <input id="newPw" type="password" autocomplete="new-password">
+      <label for="newPw2">Confirm new password</label>
+      <input id="newPw2" type="password" autocomplete="new-password">
+      <p id="pwError" class="msg error" role="alert"></p>
+      <div class="dlg-actions">
+        <button type="button" id="pwCancel" class="ghost">Cancel</button>
+        <button type="submit" id="pwSubmit" class="primary">Change password</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
