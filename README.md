@@ -4,6 +4,16 @@ A private notes app that runs entirely in your browser. Notes are encrypted with
 
 **Live demo:** https://7zt4.github.io/secure-notes/
 
+## Screenshots
+
+**Create your vault** (first use)
+
+![Create vault screen](screenshots/create-vault.png)
+
+**Notes view** (after unlocking)
+
+![Notes view](screenshots/notes-view.png)
+
 ## Features
 
 - Master password set on first use (never stored anywhere)
@@ -62,13 +72,6 @@ python -m http.server 8000
 
 Then open http://localhost:8000. The Web Crypto API needs HTTPS or localhost.
 
-## Deploy on GitHub Pages
-
-1. Push these files to a public repository named `secure-notes`.
-2. Open **Settings → Pages**.
-3. Under **Build and deployment**, choose **Deploy from a branch**, select **main** and **/ (root)**, then save.
-4. After a minute or two the site is live at `https://7zt4.github.io/secure-notes/`.
-
 ## Author
 
-Your name, your course, your college.
+**7zt4** ([github.com/7zt4](https://github.com/7zt4))
